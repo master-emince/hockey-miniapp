@@ -383,8 +383,14 @@
                 image: uploadedImage
             };
 
-            tg.sendData(JSON.stringify(data));
-            tg.close();
+            console.log('Отправка данных:', data);
+            
+            try {
+                tg.sendData(JSON.stringify(data));
+            } catch (error) {
+                console.error('Ошибка отправки:', error);
+                alert('Ошибка отправки данных: ' + error.message);
+            }
         }
 
         // Начальное обновление превью
