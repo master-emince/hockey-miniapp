@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создать прогноз</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--tg-theme-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #000);
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: var(--tg-theme-secondary-bg-color, #fff);
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            color: var(--tg-theme-text-color, #000);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #fff);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--tg-theme-hint-color, #999);
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--tg-theme-hint-color, #ddd);
+            border-radius: 8px;
+            font-size: 16px;
+            background: var(--tg-theme-secondary-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .image-upload {
+            position: relative;
+            border: 2px dashed var(--tg-theme-hint-color, #ddd);
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .image-upload:hover {
+            border-color: var(--tg-theme-button-color, #3390ec);
+            background: var(--tg-theme-secondary-bg-color, #f9f9f9);
+        }
+
+        .image-upload input {
+            display: none;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        /* Превью поста */
+        .post-preview {
+            background: var(--tg-theme-secondary-bg-color, #fff);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .post-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            min-height: 200px;
+        }
+
+        .post-content {
+            padding: 16px;
+        }
+
+        .post-header {
+            font-size: 13px;
+            color: #3390ec;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .post-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .post-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--tg-theme-text-color, #000);
+            white-space: pre-wrap;
+        }
+
+        .post-button {
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #fff);
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .button-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px;
+            background: var(--tg-theme-bg-color, #fff);
+            border-top: 1px solid var(--tg-theme-hint-color, #ddd);
+        }
+
+        .publish-button {
+            width: 100%;
+            padding: 14px;
+            background: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #fff);
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .publish-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .emoji {
+            font-size: 20px;
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color, #999);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Табы -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('editor')">✏️ Редактор</button>
+            <button class="tab" onclick="switchTab('preview')">👁️ Превью</button>
+        </div>
+
+        <!-- Редактор -->
+        <div id="editor" class="tab-content active">
+            <div class="form-group">
+                <label>🏒 Команда 1</label>
+                <input type="text" id="team1" placeholder="Авангард" oninput="updatePreview()">
+            </div>
+
+            <div class="form-group">
+                <label>🏒 Команда 2</label>
+                <input type="text" id="team2" placeholder="Локомотив" oninput="updatePreview()">
+            </div>
+
+            <div class="form-group">
+                <label>🕐 Время матча</label>
+                <input type="text" id="matchTime" placeholder="16:30 МСК" oninput="updatePreview()">
+            </div>
+
+            <div class="form-group">
+                <label>📊 Прогноз</label>
+                <textarea id="forecast" placeholder="Победа Авангарда с учётом ОТ и Булл. Кф: 1.87" oninput="updatePreview()"></textarea>
+                <div class="info-text">Этот текст увидят только подписчики после нажатия кнопки</div>
+            </div>
+
+            <div class="form-group">
+                <label>📝 Описание матча (необязательно)</label>
+                <textarea id="description" placeholder="Дополнительное описание матча..." oninput="updatePreview()"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>🖼️ Изображение</label>
+                <div class="image-upload" onclick="document.getElementById('imageInput').click()">
+                    <div>
+                        <span class="emoji">📷</span>
+                        <p>Нажмите для загрузки изображения</p>
+                    </div>
+                    <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">
+                </div>
+                <img id="imagePreview" class="image-preview" style="display: none;">
+            </div>
+        </div>
+
+        <!-- Превью -->
+        <div id="preview" class="tab-content">
+            <div class="post-preview">
+                <div id="previewImage" class="post-image">
+                    <span class="emoji">🖼️</span>
+                    <p>Загрузите изображение</p>
+                </div>
+                <div class="post-content">
+                    <div class="post-title" id="previewTitle">
+                        🔻<span id="previewTeam1">Команда 1</span> - <span id="previewTeam2">Команда 2</span>🔺
+                    </div>
+                    <div class="post-text" id="previewText"></div>
+                    <div class="post-button">
+                        📱 ПОЛУЧИТЬ ПРОГНОЗ
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="button-container">
+        <button class="publish-button" onclick="publishPost()">
+            🚀 Опубликовать прогноз
+        </button>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.MainButton.hide();
+
+        let uploadedImage = null;
+
+        function switchTab(tabName) {
+            // Переключение табов
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            if (tabName === 'preview') {
+                updatePreview();
+            }
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedImage = e.target.result;
+                    document.getElementById('imagePreview').src = uploadedImage;
+                    document.getElementById('imagePreview').style.display = 'block';
+                    updatePreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updatePreview() {
+            const team1 = document.getElementById('team1').value || 'Команда 1';
+            const team2 = document.getElementById('team2').value || 'Команда 2';
+            const matchTime = document.getElementById('matchTime').value || '00:00 МСК';
+            const description = document.getElementById('description').value;
+
+            // Обновляем заголовок
+            document.getElementById('previewTeam1').textContent = team1;
+            document.getElementById('previewTeam2').textContent = team2;
+
+            // Обновляем изображение
+            const previewImageDiv = document.getElementById('previewImage');
+            if (uploadedImage) {
+                previewImageDiv.style.backgroundImage = `url(${uploadedImage})`;
+                previewImageDiv.style.backgroundSize = 'cover';
+                previewImageDiv.style.backgroundPosition = 'center';
+                previewImageDiv.innerHTML = '';
+            }
+
+            // Формируем текст поста
+            const date = new Date().toLocaleDateString('ru-RU', { 
+                day: 'numeric', 
+                month: 'long' 
+            }).toUpperCase();
+
+            let postText = `${date} | ${matchTime}\n\n`;
+            
+            if (description) {
+                postText += `${description}\n\n`;
+            } else {
+                postText += `Сегодня в бесплатном доступе буду рассматривать для вас матч из Омска. Супер интересный матч ожидает нас, на мой взгляд. Самый большой вопрос: КТО ПОБЕДИТ?\n\n`;
+                postText += `Я думаю, что Ги Буше серьёзно настроит парней против команды, которая выкинули их из гонки за Кубок Гагарина в решающем 7 матче серии. Я уверен, что игра очень значимая и победа в ней перенесёт эмоции даже на предстоящий плей-офф.\n\n`;
+                postText += `Вообще заметил, что "${team1}" — единственная команда для Ярославля, которая является прям неудобной.\n\n`;
+            }
+            
+            postText += `👇 Моё мнение на этот матч доступно по кнопке ниже.`;
+
+            document.getElementById('previewText').textContent = postText;
+        }
+
+        function publishPost() {
+            const team1 = document.getElementById('team1').value;
+            const team2 = document.getElementById('team2').value;
+            const matchTime = document.getElementById('matchTime').value;
+            const forecast = document.getElementById('forecast').value;
+            const description = document.getElementById('description').value;
+
+            if (!team1 || !team2 || !matchTime || !forecast) {
+                tg.showAlert('❌ Заполните все обязательные поля!');
+                return;
+            }
+
+            // Отправляем данные боту
+            const data = {
+                team1: team1,
+                team2: team2,
+                time: matchTime,
+                forecast: forecast,
+                description: description,
+                image: uploadedImage
+            };
+
+            tg.sendData(JSON.stringify(data));
+            tg.close();
+        }
+
+        // Начальное обновление превью
+        updatePreview();
+    </script>
+</body>
+</html>
