@@ -233,14 +233,15 @@
             </div>
 
             <div class="form-group">
-                <label>📊 Прогноз</label>
-                <textarea id="forecast" placeholder="Победа Авангарда с учётом ОТ и Булл. Кф: 1.87" oninput="updatePreview()"></textarea>
-                <div class="info-text">Этот текст увидят только подписчики после нажатия кнопки</div>
+                <label>📝 Текст поста (виден всем в канале)</label>
+                <textarea id="postText" placeholder="Сегодня в бесплатном доступе буду рассматривать для вас матч из Омска..." oninput="updatePreview()" style="min-height: 150px;"></textarea>
+                <div class="info-text">Этот текст увидят все подписчики канала</div>
             </div>
 
             <div class="form-group">
-                <label>📝 Описание матча (необязательно)</label>
-                <textarea id="description" placeholder="Дополнительное описание матча..." oninput="updatePreview()"></textarea>
+                <label>📊 Прогноз (только для подписчиков)</label>
+                <textarea id="forecast" placeholder="Победа Авангарда с учётом ОТ и Булл. Кф: 1.87" oninput="updatePreview()"></textarea>
+                <div class="info-text">Этот текст увидят только подписчики после нажатия кнопки</div>
             </div>
 
             <div class="form-group">
@@ -324,6 +325,71 @@
         function updatePreview() {
             const team1 = document.getElementById('team1').value || 'Команда 1';
             const team2 = document.getElementById('team2').value || 'Команда 2';
+            const matchTime = document.getElementById('matchTime').value || '00:00 МСК';
+            const postText = document.getElementById('postText').value;
+
+            // Обновляем заголовок
+            document.getElementById('previewTeam1').textContent = team1;
+            document.getElementById('previewTeam2').textContent = team2;
+
+            // Обновляем изображение
+            const previewImageDiv = document.getElementById('previewImage');
+            if (uploadedImage) {
+                previewImageDiv.style.backgroundImage = `url(${uploadedImage})`;
+                previewImageDiv.style.backgroundSize = 'cover';
+                previewImageDiv.style.backgroundPosition = 'center';
+                previewImageDiv.innerHTML = '';
+            }
+
+            // Формируем текст поста
+            const date = new Date().toLocaleDateString('ru-RU', { 
+                day: 'numeric', 
+                month: 'long' 
+            }).toUpperCase();
+
+            let fullPostText = `${date} | ${matchTime}\n\n`;
+            
+            if (postText) {
+                fullPostText += postText;
+            } else {
+                fullPostText += `Сегодня в бесплатном доступе буду рассматривать для вас матч из Омска. Супер интересный матч ожидает нас, на мой взгляд. Самый большой вопрос: КТО ПОБЕДИТ?`;
+            }
+
+            document.getElementById('previewText').textContent = fullPostText;
+        }
+
+        function publishPost() {
+            const team1 = document.getElementById('team1').value;
+            const team2 = document.getElementById('team2').value;
+            const matchTime = document.getElementById('matchTime').value;
+            const forecast = document.getElementById('forecast').value;
+            const postText = document.getElementById('postText').value;
+
+            if (!team1 || !team2 || !matchTime || !forecast || !postText) {
+                tg.showAlert('❌ Заполните все обязательные поля!');
+                return;
+            }
+
+            // Отправляем данные боту БЕЗ добавления команд и времени
+            // Бот сам добавит их при публикации
+            const data = {
+                team1: team1,
+                team2: team2,
+                time: matchTime,
+                forecast: forecast,
+                post_text: postText,  // Отправляем чистый текст как есть
+                image: uploadedImage
+            };
+
+            console.log('Отправка данных:', data);
+            
+            try {
+                tg.sendData(JSON.stringify(data));
+            } catch (error) {
+                console.error('Ошибка отправки:', error);
+                tg.showAlert('Ошибка отправки данных: ' + error.message);
+            }
+        }2').value || 'Команда 2';
             const matchTime = document.getElementById('matchTime').value || '00:00 МСК';
             const description = document.getElementById('description').value;
 
